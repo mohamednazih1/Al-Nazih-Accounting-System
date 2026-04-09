@@ -1,13 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 
-// نظام النزيه للمحاسبة - المطور محمد نزيه 01029190615
-export default function AlNazihApp() {
+// نظام النزيه للمحاسبة v1.0 | تطوير: Mohamed Nazih
+export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  // دالة تسجيل الدخول للشركات والموظفين
-  const handleLogin = async (email, password) => {
+  useEffect(() => {
+    // التحقق من الجلسة الحالية
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getSession();
+      setUser(data.session?.user ?? null);
+    };
+    checkUser();
+  }, []);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
     setLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) alert("خطأ في الدخول: " + error.message);
@@ -15,49 +26,52 @@ export default function AlNazihApp() {
     setLoading(false);
   };
 
-  return (
-    <div className="min-h-screen bg-gray-100 font-sans" dir="rtl">
-      {!user ? (
-        /* شاشة الدخول */
-        <div className="flex flex-col items-center justify-center pt-20">
-          <div className="bg-white p-8 rounded-xl shadow-lg w-80 text-center">
-            <h1 className="text-2xl font-bold text-blue-700 mb-4">النزيه للمحاسبة</h1>
-            <input id="email" type="email" placeholder="بريد الموظف" className="w-full mb-3 p-2 border rounded" />
-            <input id="pass" type="password" placeholder="كلمة المرور" className="w-full mb-4 p-2 border rounded" />
-            <button 
-              onClick={() => handleLogin(document.getElementById('email').value, document.getElementById('pass').value)}
-              className="bg-blue-600 text-white w-full py-2 rounded hover:bg-blue-700"
-            >
-              {loading ? "جاري الدخول..." : "دخول النظام"}
-            </button>
-          </div>
-        </div>
-      ) : (
-        /* لوحة التحكم بعد الدخول */
-        <div className="p-4">
-          <nav className="bg-white p-4 shadow rounded-lg flex justify-between">
-            <span className="font-bold">أهلاً بك في نظام النزيه</span>
-            <button onClick={() => supabase.auth.signOut()} className="text-red-500">خروج</button>
-          </nav>
-          
-          <div className="grid grid-cols-2 gap-4 mt-6">
-            <div className="bg-green-500 text-white p-6 rounded-lg shadow">
-              <p>إجمالي الخزينة</p>
-              <h2 className="text-2xl font-bold">0.00 ج.م</h2>
-            </div>
-            <div className="bg-blue-500 text-white p-6 rounded-lg shadow">
-              <p>عدد العمليات اليوم</p>
-              <h2 className="text-2xl font-bold">0</h2>
-            </div>
-          </div>
-        </div>
-      )}
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
 
-      {/* حقوق الملكية الدائمة - محمد نزيه */}
-      <footer className="fixed bottom-0 w-full bg-white border-t p-2 text-center text-xs text-gray-500">
-        تطوير وبرمجة: <span className="font-bold text-blue-600">Mohamed Nazih</span> | ت: 01029190615
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 font-sans" dir="rtl">
+        <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border-t-8 border-blue-600">
+          <h1 className="text-3xl font-black text-center text-blue-900 mb-2">نظام النزيه</h1>
+          <p className="text-center text-gray-500 mb-8">إدارة حسابات الشركات والمحلات</p>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <input type="email" placeholder="البريد الإلكتروني" className="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" value={email} onChange={(e)=>setEmail(e.target.value)} required />
+            <input type="password" placeholder="كلمة المرور" className="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" value={password} onChange={(e)=>setPassword(e.target.value)} required />
+            <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition" disabled={loading}>
+              {loading ? "جاري التحقق..." : "دخول النظام"}
+            </button>
+          </form>
+          <p className="mt-6 text-center text-xs text-gray-400 font-bold">MOHAMED NAZIH - 01029190615</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 font-sans" dir="rtl">
+      <nav className="bg-blue-900 text-white p-4 shadow-lg flex justify-between items-center">
+        <h2 className="text-xl font-bold">النزيه للمحاسبة</h2>
+        <button onClick={handleLogout} className="bg-red-500 px-4 py-1 rounded text-sm font-bold">خروج</button>
+      </nav>
+      <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white p-8 rounded-xl shadow-md border-r-8 border-green-500">
+          <p className="text-gray-500 text-sm">رصيد الخزينة</p>
+          <h3 className="text-4xl font-black text-gray-800">0.00 <span className="text-lg">ج.م</span></h3>
+        </div>
+        <div className="bg-white p-8 rounded-xl shadow-md border-r-8 border-blue-500">
+          <p className="text-gray-500 text-sm">مبيعات اليوم</p>
+          <h3 className="text-4xl font-black text-gray-800">0</h3>
+        </div>
+      </div>
+      <div className="p-6">
+          <button className="w-full bg-blue-600 text-white py-5 rounded-2xl text-xl font-black shadow-2xl">+ إضافة فاتورة بيع</button>
+      </div>
+      <footer className="fixed bottom-0 w-full bg-white p-3 text-center border-t border-gray-200">
+          <p className="text-sm font-bold text-blue-900">برمجة وتطوير: Mohamed Nazih | 01029190615</p>
       </footer>
     </div>
   );
 }
-
